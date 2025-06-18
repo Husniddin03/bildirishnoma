@@ -3,7 +3,8 @@ let ansLines = [];
 const seenQuestions = new Set();  // Track already notified questions
 let dataLoaded = false;           // Track if files loaded
 
-// Normalize function: lowercase, remove punctuation, collapse spaces, remove repeated letters
+// Normalize function: lowercase, remove punctuation, collapse spaces, remove
+// repeated letters
 function normalize(text) {
   return text.toLowerCase()
       .replace(/[^\w\s]/g, '')    // remove punctuation
@@ -12,35 +13,20 @@ function normalize(text) {
       .trim();
 }
 
-// Process the hardcoded question-answer data
-function parseMatn() {
-
-
-  const blocks = inputText
-    .split("++++")
-    .map((b) => b.trim())
-    .filter((b) => b);
-
-  blocks.forEach((block) => {
-    const lines = block
-      .split("\n")
-      .map((l) => l.trim())
-      .filter((l) => l);
-
-    const savolIndex = lines.findIndex((l) => l === "====");
-    if (savolIndex !== -1 && lines[savolIndex + 1]) {
-      const savol = lines.slice(0, savolIndex).join(" ");
-      const javob = lines[savolIndex + 1];
-      qsnLines.push(normalize(savol));
-      ansLines.push(javob);
-    }
-  });
-  
-  dataLoaded = true;
-}
-
-// Initialize by parsing the data when the script loads
-parseMatn();
+// Load both files and set dataLoaded when done
+Promise
+    .all([
+      fetch('qsn.txt').then(r => r.text()), fetch('ans.txt').then(r => r.text())
+    ])
+    .then(([qsnData, ansData]) => {
+      qsnLines =
+          qsnData.split(/\r?\n/).map(line => normalize(line)).filter(Boolean);
+      ansLines = ansData.split(/\r?\n/).map(line => line.trim());
+      dataLoaded = true;
+    })
+    .catch(err => {
+      console.error('Error loading question or answer files:', err);
+    });
 
 function sendNotification(title, message) {
   const options = {
