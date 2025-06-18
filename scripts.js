@@ -1,20 +1,18 @@
 let qsnLines = [];
 let ansLines = [];
-const seenQuestions = new Set();  // Track already notified questions
-let dataLoaded = false;           // Track if files loaded
+const seenQuestions = new Set();
+let dataLoaded = false;
 
-// Normalize function: lowercase, remove punctuation, collapse spaces, remove repeated letters
 function normalize(text) {
   return text.toLowerCase()
-      .replace(/[^\w\s]/g, '')    // remove punctuation
-      .replace(/\s+/g, ' ')       // collapse multiple spaces
-      .replace(/(\w)\1+/g, '$1')  // reduce repeated letters
+      .replace(/[^\w\s]/g, '')
+      .replace(/\s+/g, ' ')
+      .replace(/(\w)\1+/g, '$1')
       .trim();
 }
 
-// Process the hardcoded question-answer data
 function parseMatn() {
-  const inputText = `Shovqinlar qayerlarda ko’p uchraydi?
+const inputText = `Shovqinlar qayerlarda ko’p uchraydi?
 ====
 Shaharlarda.
 
@@ -1534,18 +1532,12 @@ Ishlab chiqarishdagi  yoritish sistemalari necha xil bo’ladi?
 ====
 Tabiiy, sun’iy va aralash.`;
 
-  const blocks = inputText
-    .split("++++")
-    .map((b) => b.trim())
-    .filter((b) => b);
+  const blocks = inputText.split("++++").map(b => b.trim()).filter(b => b);
 
-  blocks.forEach((block) => {
-    const lines = block
-      .split("\n")
-      .map((l) => l.trim())
-      .filter((l) => l);
-
-    const savolIndex = lines.findIndex((l) => l === "====");
+  blocks.forEach(block => {
+    const lines = block.split("\n").map(l => l.trim()).filter(l => l);
+    const savolIndex = lines.findIndex(l => l === "====");
+    
     if (savolIndex !== -1 && lines[savolIndex + 1]) {
       const savol = lines.slice(0, savolIndex).join(" ");
       const javob = lines[savolIndex + 1];
@@ -1557,13 +1549,12 @@ Tabiiy, sun’iy va aralash.`;
   dataLoaded = true;
 }
 
-// Initialize by parsing the data when the script loads
 parseMatn();
 
 function sendNotification(title, message) {
   const options = {
     body: message,
-    icon: 'kun.jpg'  // or full URL
+    icon: 'kun.jpg'
   };
   if (Notification.permission === 'granted') {
     new Notification(title, options);
@@ -1589,11 +1580,14 @@ async function checkQuestions() {
   const inputText = document.getElementById('textInput').value;
   const delayInput = document.getElementById('delayInput').value.trim();
   const userDelay = parseInt(delayInput, 10);
-  const delayTime = (Number.isInteger(userDelay) && userDelay > 0) ? userDelay : 5000;
+  const delayTime = (Number.isInteger(userDelay) && userDelay > 0) ? userDelay : 2000;
 
   const pattern = /\d+\..*?(?=\d+\.\s*|$)/gs;
   const matches = inputText.match(pattern);
   if (!matches) return;
+
+  let allAnswers = [];
+  let batchCounter = 0;
 
   for (const fragmentRaw of matches) {
     const fragment = normalize(fragmentRaw.trim());
@@ -1608,20 +1602,36 @@ async function checkQuestions() {
       if (seenQuestions.has(num)) break;
 
       const ans = ansLines[i] || 'no answer :(';
-      sendNotification(`Kun.uz - O'zbekiston va dunyo yangiliklari`, `${num} - ${ans}`);
+      allAnswers.push(`${num} - ${ans}`);
       seenQuestions.add(num);
+      batchCounter++;
 
-      await delay(delayTime); // <-- Use dynamic delay
+      // Send batch of 5 answers
+      if (batchCounter % 5 === 0) {
+        const batchStart = batchCounter - 5;
+        const batchEnd = batchCounter;
+        const batch = allAnswers.slice(batchStart, batchEnd);
+        sendNotification(`Topilgan javoblar (${batchStart+1}-${batchEnd})`, batch.join('\n\n'));
+        await delay(delayTime);
+      }
       break;
     }
+  }
+
+  // Send remaining answers (if less than 5)
+  if (batchCounter % 5 !== 0) {
+    const remainingStart = batchCounter - (batchCounter % 5);
+    const remaining = allAnswers.slice(remainingStart);
+    sendNotification(`Topilgan javoblar (${remainingStart+1}-${batchCounter})`, remaining.join('\n\n'));
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const oneIdLink = document.getElementById('oneIdLink');
-    if (oneIdLink) {
-        oneIdLink.addEventListener('dblclick', () => {
-            window.location.href = 'scroll.html';
-        });
-    }
+  const oneIdLink = document.getElementById('oneIdLink');
+  if (oneIdLink) {
+    oneIdLink.addEventListener('dblclick', () => {
+      window.location.href = 'scroll.html';
+    });
+  }
 });
+
