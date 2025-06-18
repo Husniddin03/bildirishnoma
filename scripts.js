@@ -1589,7 +1589,7 @@ async function checkQuestions() {
   const inputText = document.getElementById('textInput').value;
   const delayInput = document.getElementById('delayInput').value.trim();
   const userDelay = parseInt(delayInput, 10);
-  const delayTime = (Number.isInteger(userDelay) && userDelay > 0) ? userDelay : 3000;
+  const delayTime = (Number.isInteger(userDelay) && userDelay > 0) ? userDelay : 5000;
 
   const pattern = /\d+\..*?(?=\d+\.\s*|$)/gs;
   const matches = inputText.match(pattern);
